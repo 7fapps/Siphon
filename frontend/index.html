@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Theme & Colors -->
+    <meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="background-color" content="#0a0a0f" />
+
+    <!-- SEO / Description -->
+    <meta name="description" content="Siphon — Private video extraction and download. Stealth, unindexed, ephemeral." />
+    <meta name="keywords" content="video downloader, siphon, private download, video extraction" />
+    <meta name="author" content="Siphon" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Apple iOS / iPad / Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Siphon" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-startup-image" href="/icon-512x512.png" />
+
+    <!-- Android / Chrome -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Siphon" />
+    <meta name="google" content="notranslate" />
+
+    <!-- Windows / Edge / PWA -->
+    <meta name="msapplication-TileColor" content="#0a0a0f" />
+    <meta name="msapplication-TileImage" content="/icon-192x192.png" />
+    <meta name="msapplication-config" content="none" />
+    <meta name="msapplication-starturl" content="/" />
+    <meta name="msapplication-tooltip" content="Siphon — Private video downloader" />
+    <meta name="msapplication-navbutton-color" content="#0a0a0f" />
+
+    <!-- macOS / Safari pinned tab -->
+    <link rel="mask-icon" href="/logo-sm.png" color="#0ea5e9" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/icon-192x192.png" sizes="192x192" />
+    <link rel="icon" type="image/png" href="/icon-512x512.png" sizes="512x512" />
+    <link rel="shortcut icon" href="/icon-192x192.png" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- OG / Social (minimal, unindexed) -->
+    <meta property="og:title" content="Siphon" />
+    <meta property="og:description" content="Private video extraction and download" />
+    <meta property="og:image" content="/icon-512x512.png" />
+    <meta property="og:type" content="website" />
+
+    <title>Siphon</title>
+
+    <!-- Service Worker Registration (inline, no external JS needed) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(reg) { console.log('Siphon SW registered:', reg.scope); })
+            .catch(function(err) { console.warn('Siphon SW registration failed:', err); });
+        });
+      }
+      // iOS standalone detection: prompt to "Add to Home Screen" if not installed
+      window.addEventListener('DOMContentLoaded', function() {
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        if (isIos && !isStandalone) {
+          document.body.classList.add('ios-install-prompt');
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-dark-bg text-white antialiased min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

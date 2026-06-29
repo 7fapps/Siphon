@@ -1,0 +1,108 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: siphon-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: siphon-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TEMP_DOWNLOAD_DIR=/app/temp/downloads
+      - DATABASE_URL=sqlite:///app/siphon.db
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - ENABLE_BATCH=true
+      - ENABLE_AUDIO_ONLY=true
+      - ENABLE_WEBSOCKET=true
+    volumes:
+      - ./temp/downloads:/app/temp/downloads
+      - ./backend/siphon.db:/app/siphon.db
+    depends_on:
+      - redis
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: siphon-worker
+    restart: unless-stopped
+    command: celery -A app.celery_app worker -Q siphon -l info -c 2 --prefetch-multiplier=1
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TEMP_DOWNLOAD_DIR=/app/temp/downloads
+      - DATABASE_URL=sqlite:///app/siphon.db
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./temp/downloads:/app/temp/downloads
+      - ./backend/siphon.db:/app/siphon.db
+    depends_on:
+      - redis
+      - backend
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: siphon-beat
+    restart: unless-stopped
+    command: celery -A app.celery_app beat -l info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TEMP_DOWNLOAD_DIR=/app/temp/downloads
+      - DATABASE_URL=sqlite:///app/siphon.db
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./temp/downloads:/app/temp/downloads
+      - ./backend/siphon.db:/app/siphon.db
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: siphon-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  # Optional: Nginx reverse proxy with SSL
+  # Uncomment for production with a real domain:
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: siphon-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - backend
+  #     - frontend
+
+volumes:
+  redis-data:
