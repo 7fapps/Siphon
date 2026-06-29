@@ -41,14 +41,11 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(StructuredLoggingMiddleware)
+
+# UPDATED: Changed allow_origins to ["*"] to prevent Render CORS blocks
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.debug else [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://siphon-app.onrender.com",
-        "https://siphon-app.vercel.app",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
