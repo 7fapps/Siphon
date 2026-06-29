@@ -12,6 +12,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/probe", tags=["probe"])
 settings = get_settings()
 
+# ADDED FALLBACK: This handles GET requests gracefully if the frontend uses GET with a query string (?url=...)
+@router.get("", response_model=ProbeResponse, status_code=status.HTTP_200_OK)
+async def probe_url_get(url: str, req: Request) -> ProbeResponse:
+    if not url or not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid URL")
+
+    extractor = get_extractor()
+    try:
+        result = await extractor.probe(url)
+    except Exception as e:
+        logger.exception(f"Probe failed for {url}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Extraction failed: {str(e)}")
+
+    if not result.formats:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No video formats found")
+
+    return result
+
 @router.post("", response_model=ProbeResponse, status_code=status.HTTP_200_OK)
 async def probe_url(request: ProbeRequest, req: Request) -> ProbeResponse:
     if not request.url or not request.url.startswith(("http://", "https://")):
